@@ -127,13 +127,13 @@ int main(int argc, char **argv)
     dim3 grid((N + BLOCKSIZE - 1) / BLOCKSIZE, (M + BLOCKSIZE * 4 - 1) / (BLOCKSIZE * 4));
 
     // Warmup
-    int warmup = 100;
+    int warmup = 50;//100;
     for (int i = 0; i < warmup; ++i)
         matmul<<<grid, block>>>(d_A, d_B, d_C, M, N, K);
     CUDA_CHECK(cudaDeviceSynchronize());
 
     // Energy measurement: 100 rounds of 100 iterations each
-    int rounds = 100;
+    int rounds = 50;//100;
     int iterations_per_round = 100;
     double *energy_per_round = (double*)malloc(rounds * sizeof(double));
 

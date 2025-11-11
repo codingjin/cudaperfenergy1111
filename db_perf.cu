@@ -114,13 +114,13 @@ int main(int argc, char **argv)
     dim3 grid((M + BLOCKSIZE - 1) / BLOCKSIZE, (N + BLOCKSIZE - 1) / BLOCKSIZE);
 
     // Warmup
-    int warmup = 100;
+    int warmup = 50;//100;
     for (int i = 0; i < warmup; ++i)
         matmul<<<grid, block>>>(d_A, d_B, d_C, M, N, K);
     CUDA_CHECK(cudaDeviceSynchronize());
 
     // Timed measurement
-    int iterations = 1000;
+    int iterations = 500;//1000;
     cudaEvent_t start, stop;
     CUDA_CHECK(cudaEventCreate(&start));
     CUDA_CHECK(cudaEventCreate(&stop));
