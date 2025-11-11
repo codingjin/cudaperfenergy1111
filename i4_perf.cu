@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     CUDA_CHECK(cudaMemcpy(d_B, h_B, sizeB, cudaMemcpyHostToDevice));
 
     dim3 block(BLOCKSIZE, BLOCKSIZE);
-    dim3 grid((N + BLOCKSIZE - 1) / BLOCKSIZE, (M + BLOCKSIZE * 2 - 1) / (BLOCKSIZE * 4));
+    dim3 grid((N + BLOCKSIZE - 1) / BLOCKSIZE, (M + BLOCKSIZE * 4 - 1) / (BLOCKSIZE * 4));
 
     // Warmup
     int warmup = 100;
