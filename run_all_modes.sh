@@ -41,46 +41,17 @@ if ! nvidia-smi -i ${GPU_ID} &> /dev/null; then
     exit 1
 fi
 
-# Store original GPU settings for cleanup
-ORIGINAL_POWER_LIMIT=$(nvidia-smi -i ${GPU_ID} -q -d POWER | awk '/Default Power Limit/ {print $5; exit}')
-if [[ -z "$ORIGINAL_POWER_LIMIT" ]]; then
-    echo "⚠️  Warning: Could not determine default power limit"
-    ORIGINAL_POWER_LIMIT=""
-fi
-
-# Cleanup function - will be called on exit
-cleanup() {
-    local exit_code=$?
-    echo ""
-    echo "=========================================="
-    echo "Cleaning up..."
-    echo "=========================================="
-
-    # Reset GPU clocks
-    echo "→ Resetting GPU clock locks..."
-    sudo nvidia-smi -i ${GPU_ID} -rgc || echo "⚠️  Failed to reset GPU clocks"
-
-    # Reset power limit if we have the original value
-    if [[ -n "$ORIGINAL_POWER_LIMIT" ]]; then
-        echo "→ Resetting power limit to ${ORIGINAL_POWER_LIMIT} W..."
-        sudo nvidia-smi -i ${GPU_ID} -pl ${ORIGINAL_POWER_LIMIT} || echo "⚠️  Failed to reset power limit"
-    fi
-
-    echo "✅ Cleanup completed"
-
-    if [ $exit_code -ne 0 ]; then
-        echo "❌ Script exited with errors (exit code: $exit_code)"
-    fi
-}
-
-# Register cleanup function
-trap cleanup EXIT INT TERM
-
 # Function to configure GPU settings
 configure_gpu() {
     local MODE=$1
 
     echo "Configuring GPU for mode ${MODE}..."
+
+    # Refresh sudo to prevent timeout
+    sudo -v || {
+        echo "❌ Failed to refresh sudo privileges"
+        return 1
+    }
 
     # Enable persistence mode
     sudo nvidia-smi -i ${GPU_ID} -pm 1 || {
@@ -220,8 +191,12 @@ run_benchmarks() {
         fi
 
         echo "→ Running $binary..."
-        if ! ./$binary $M $N $K 2>&1 | tee "$output_file"; then
-            echo "⚠️  Warning: $binary failed or returned non-zero exit code"
+        set +e  # Temporarily disable exit-on-error for benchmark execution
+        ./$binary $M $N $K 2>&1 | tee "$output_file"
+        local exit_status=$?
+        set -e  # Re-enable exit-on-error
+        if [ $exit_status -ne 0 ]; then
+            echo "⚠️  Warning: $binary failed with exit code $exit_status"
         fi
     done
 
