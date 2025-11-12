@@ -49,7 +49,7 @@ __global__ void matmul(const float *A, const float *B, float *C, const int M, co
     if (row < M && col < N) C[row * N + col] = result00;
     if (row < M && col + BLOCKSIZE < N) C[row * N + col + BLOCKSIZE] = result01;
     if (row + BLOCKSIZE < M && col < N) C[(row + BLOCKSIZE) * N + col] = result10;
-    if (row + BLOCKSIZE < M && col < N + BLOCKSIZE) C[(row + BLOCKSIZE) * N + col + BLOCKSIZE] = result11;
+    if (row + BLOCKSIZE < M && col + BLOCKSIZE < N) C[(row + BLOCKSIZE) * N + col + BLOCKSIZE] = result11;
 }
 
 // CPU reference implementation for a single element at index (row, col)
