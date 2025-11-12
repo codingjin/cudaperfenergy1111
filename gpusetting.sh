@@ -18,7 +18,7 @@ echo "Detected $NUM_GPUS GPU(s)."
 sudo nvidia-smi -i ${GPU_ID} -pm 1
 
 # ------------------------------------------------------------
-# Get clean MIN/MAX power limits from GPU Power Readings block
+# Get clean MIN/MAX power limits
 # ------------------------------------------------------------
 read MIN_POWER MAX_POWER < <(nvidia-smi -i ${GPU_ID} -q -d POWER \
   | awk '/GPU Power Readings/,/Power Samples/ {if ($1=="Min") p1=$5; if ($1=="Max") p2=$5} END{print p1, p2}')
@@ -38,27 +38,20 @@ echo "→ Setting GPU${GPU_ID} power limit to ${POWER_LIMIT} W"
 sudo nvidia-smi -i ${GPU_ID} -pl ${POWER_LIMIT}
 
 # ------------------------------------------------------------
-# Determine clock settings (MAX or MIN) - FIXED PARSING
+# Determine GPU core clock only (no memory)
 # ------------------------------------------------------------
 if [[ "$MODE" == "1" || "$MODE" == "3" ]]; then
-    # Max clocks
-    read MEM_CLOCK GPU_CLOCK < <(nvidia-smi -i ${GPU_ID} --query-supported-clocks=memory,graphics --format=csv,noheader \
-        | tr -d ' ' | sort -nr -t',' -k2 | head -n1 | tr ',' ' ')
+    # Max GPU clock
+    GPU_CLOCK=$(nvidia-smi -i ${GPU_ID} --query-supported-clocks=memory,graphics --format=csv,noheader \
+        | tr -d ' ' | sort -nr -t',' -k2 | head -n1 | awk -F',' '{print $2}' | grep -Eo '[0-9]+')
 else
-    # Min clocks
-    read MEM_CLOCK GPU_CLOCK < <(nvidia-smi -i ${GPU_ID} --query-supported-clocks=memory,graphics --format=csv,noheader \
-        | tr -d ' ' | sort -n -t',' -k2 | head -n1 | tr ',' ' ')
+    # Min GPU clock
+    GPU_CLOCK=$(nvidia-smi -i ${GPU_ID} --query-supported-clocks=memory,graphics --format=csv,noheader \
+        | tr -d ' ' | sort -n -t',' -k2 | head -n1 | awk -F',' '{print $2}' | grep -Eo '[0-9]+')
 fi
 
-# Strip non-numeric characters
-GPU_CLOCK=$(echo "$GPU_CLOCK" | grep -Eo '[0-9]+')
-MEM_CLOCK=$(echo "$MEM_CLOCK" | grep -Eo '[0-9]+')
-
-echo "→ Locking GPU clock to ${GPU_CLOCK} MHz"
+echo "→ Locking GPU core clock to ${GPU_CLOCK} MHz"
 sudo nvidia-smi -i ${GPU_ID} --lock-gpu-clocks=${GPU_CLOCK},${GPU_CLOCK}
-
-echo "→ Locking Memory clock to ${MEM_CLOCK} MHz"
-sudo nvidia-smi -i ${GPU_ID} --lock-memory-clocks=${MEM_CLOCK},${MEM_CLOCK}
 
 # ------------------------------------------------------------
 # Disable other GPUs
@@ -78,5 +71,5 @@ fi
 export CUDA_VISIBLE_DEVICES=0
 echo ""
 echo "CUDA_VISIBLE_DEVICES=0"
-echo "✅ GPU0 configured in mode $MODE; other GPUs disabled."
+echo "✅ GPU0 configured in mode $MODE (GPU clock only); other GPUs disabled."
 echo "Check with: nvidia-smi -q -d POWER,CLOCK"
