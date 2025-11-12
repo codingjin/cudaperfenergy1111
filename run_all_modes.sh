@@ -3,10 +3,6 @@
 # Exit on error, but allow some commands to fail gracefully
 set -euxo pipefail
 
-# Disable output buffering for immediate display
-exec > >(stdbuf -oL cat)
-exec 2> >(stdbuf -oL cat >&2)
-
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
