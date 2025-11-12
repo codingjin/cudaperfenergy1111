@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Exit on error, but allow some commands to fail gracefully
-set -euo pipefail
+set -euxo pipefail
 
 # Disable output buffering for immediate display
 exec > >(stdbuf -oL cat)
