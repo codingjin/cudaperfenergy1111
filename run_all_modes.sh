@@ -29,10 +29,6 @@ if ! sudo -n true 2>/dev/null; then
     sudo -v || { echo "❌ Failed to obtain sudo privileges"; exit 1; }
 fi
 
-# Keep sudo alive
-(while true; do sudo -n true; sleep 50; done 2>/dev/null) &
-SUDO_KEEPALIVE_PID=$!
-
 # Validate nvidia-smi is available
 if ! command -v nvidia-smi &> /dev/null; then
     echo "❌ nvidia-smi not found. Please install NVIDIA drivers."
@@ -59,9 +55,6 @@ cleanup() {
     echo "=========================================="
     echo "Cleaning up..."
     echo "=========================================="
-
-    # Kill sudo keepalive
-    kill $SUDO_KEEPALIVE_PID 2>/dev/null || true
 
     # Reset GPU clocks
     echo "→ Resetting GPU clock locks..."
