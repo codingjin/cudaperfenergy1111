@@ -71,8 +71,6 @@ cleanup() {
     if [ $exit_code -ne 0 ]; then
         echo "❌ Script exited with errors (exit code: $exit_code)"
     fi
-
-    exit $exit_code
 }
 
 # Register cleanup function
